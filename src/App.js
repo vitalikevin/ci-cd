@@ -64,7 +64,7 @@ function App() {
             borderRadius: "4px",
           }}
         >
-          Inscription réussie
+          Inscription réussie !
         </div>
       )}
 
