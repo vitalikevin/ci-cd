@@ -20,10 +20,8 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Mise à jour vers v4
       - uses: actions/checkout@v4
 
-      # Mise à jour vers v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -40,12 +38,14 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      # Mise à jour vers v5
+      - name: Generate Jsdoc
+        run: |
+          npm run jsdoc
+
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
 
-      # Mise à jour vers v3 (qui utilise en interne le nouveau système d'artifact)
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -62,7 +62,6 @@ jobs:
       pages: write
       id-token: write
     steps:
-      # Mise à jour vers v4
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
