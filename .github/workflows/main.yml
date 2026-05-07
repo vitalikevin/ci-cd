@@ -45,7 +45,6 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: build
-          if-no-files-found: error
 
   # Deploy job
   deploy:
