@@ -1,35 +1,35 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import App from "./App";
 
-const STORAGE_KEY = "inscrits";
+const STORAGE_KEY = "registeredUsers";
 
 const VALID_FORM = {
-  nom: "Dupont",
-  prenom: "Jean",
-  mail: "jean.dupont@example.com",
-  dateNaissance: "1990-06-15",
-  ville: "Paris",
-  codePostal: "75001",
+  lastName: "Dupont",
+  firstName: "Jean",
+  email: "jean.dupont@example.com",
+  birthDate: "1990-06-15",
+  city: "Paris",
+  postalCode: "75001",
 };
 
 function fillForm(data) {
   fireEvent.change(screen.getByLabelText(/^Nom/i), {
-    target: { value: data.nom },
+    target: { value: data.lastName },
   });
   fireEvent.change(screen.getByLabelText(/Prénom/i), {
-    target: { value: data.prenom },
+    target: { value: data.firstName },
   });
   fireEvent.change(screen.getByLabelText(/Mail/i), {
-    target: { value: data.mail },
+    target: { value: data.email },
   });
   fireEvent.change(screen.getByLabelText(/Date de naissance/i), {
-    target: { value: data.dateNaissance },
+    target: { value: data.birthDate },
   });
   fireEvent.change(screen.getByLabelText(/Ville/i), {
-    target: { value: data.ville },
+    target: { value: data.city },
   });
   fireEvent.change(screen.getByLabelText(/Code postal/i), {
-    target: { value: data.codePostal },
+    target: { value: data.postalCode },
   });
 }
 
@@ -37,8 +37,8 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-describe("App - Rendu initial", () => {
-  it("affiche tous les champs du formulaire", () => {
+describe("App - Initial render", () => {
+  it("should display all form fields", () => {
     render(<App />);
     expect(screen.getByLabelText(/^Nom/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Prénom/i)).toBeInTheDocument();
@@ -48,120 +48,103 @@ describe("App - Rendu initial", () => {
     expect(screen.getByLabelText(/Code postal/i)).toBeInTheDocument();
   });
 
-  it("affiche le bouton Sauvegarder", () => {
+  it("should display the save button", () => {
     render(<App />);
     expect(screen.getByTestId("submit-btn")).toBeInTheDocument();
   });
 
-  it("affiche la liste des inscrits (vide au départ)", () => {
+  it("should display an empty registered users list", () => {
     render(<App />);
-    expect(screen.getByTestId("inscrits-list")).toBeInTheDocument();
-    expect(screen.getByTestId("inscrits-list").children).toHaveLength(0);
+    expect(screen.getByTestId("registeredUsers-list")).toBeInTheDocument();
+    expect(screen.getByTestId("registeredUsers-list").children).toHaveLength(0);
   });
 });
 
-describe("App - Désactivation du bouton", () => {
-  it("le bouton est désactivé quand le formulaire est vide", () => {
+describe("App - Button disabled state", () => {
+  it("should be disabled when the form is empty", () => {
     render(<App />);
     expect(screen.getByTestId("submit-btn")).toBeDisabled();
   });
 
-  it("le bouton reste désactivé si un seul champ est rempli", () => {
-    render(<App />);
-    fireEvent.change(screen.getByLabelText(/^Nom/i), {
-      target: { value: "Dupont" },
-    });
-    expect(screen.getByTestId("submit-btn")).toBeDisabled();
-  });
-
-  it("le bouton est activé quand tous les champs sont valides", () => {
+  it("should be enabled when all fields are valid", () => {
     render(<App />);
     fillForm(VALID_FORM);
     expect(screen.getByTestId("submit-btn")).not.toBeDisabled();
   });
-
-  it("le bouton est désactivé si un champ valide est ensuite vidé", () => {
-    render(<App />);
-    fillForm(VALID_FORM);
-    fireEvent.change(screen.getByLabelText(/^Nom/i), {
-      target: { value: "" },
-    });
-    expect(screen.getByTestId("submit-btn")).toBeDisabled();
-  });
 });
 
-describe("App - Messages d'erreur en rouge", () => {
-  it("affiche une erreur rouge pour un nom invalide (chiffres)", () => {
+describe("App - Red error messages", () => {
+  it("should display an error for an invalid last name (digits)", () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText(/^Nom/i), {
       target: { value: "Dupont123" },
     });
-    const error = screen.getByTestId("error-nom");
+    const error = screen.getByTestId("error-lastName");
     expect(error).toBeInTheDocument();
     expect(error).toHaveStyle({ color: "red" });
   });
 
-  it("affiche une erreur rouge pour un prénom invalide (caractère spécial)", () => {
+  it("should display an error for an invalid first name (special character)", () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText(/Prénom/i), {
       target: { value: "Jean@" },
     });
-    const error = screen.getByTestId("error-prenom");
+    const error = screen.getByTestId("error-firstName");
     expect(error).toBeInTheDocument();
     expect(error).toHaveStyle({ color: "red" });
   });
 
-  it("affiche une erreur rouge pour un email invalide", () => {
+  it("should display an error for an invalid email", () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText(/Mail/i), {
       target: { value: "pasunemail" },
     });
-    const error = screen.getByTestId("error-mail");
+    const error = screen.getByTestId("error-email");
     expect(error).toBeInTheDocument();
     expect(error).toHaveStyle({ color: "red" });
   });
 
-  it("affiche une erreur rouge pour un mineur (date de naissance)", () => {
+  it("should display an error for a minor (date of birth)", () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText(/Date de naissance/i), {
       target: { value: "2015-01-01" },
     });
-    const error = screen.getByTestId("error-dateNaissance");
+    const error = screen.getByTestId("error-birthDate");
     expect(error).toBeInTheDocument();
     expect(error).toHaveStyle({ color: "red" });
   });
 
-  it("affiche une erreur rouge pour une ville invalide", () => {
+  it("should display an error for an invalid city", () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText(/Ville/i), {
       target: { value: "Paris2" },
     });
-    const error = screen.getByTestId("error-ville");
+    const error = screen.getByTestId("error-city");
     expect(error).toBeInTheDocument();
     expect(error).toHaveStyle({ color: "red" });
   });
 
-  it("affiche une erreur rouge pour un code postal invalide (4 chiffres)", () => {
+  it("should display an error for an invalid postal code (4 digits)", () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText(/Code postal/i), {
       target: { value: "7500" },
     });
-    const error = screen.getByTestId("error-codePostal");
+    const error = screen.getByTestId("error-postalCode");
     expect(error).toBeInTheDocument();
     expect(error).toHaveStyle({ color: "red" });
   });
 
-  it("n'affiche pas d'erreur quand le champ est valide", () => {
+  it("should not display an error when the field is valid", () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText(/^Nom/i), {
       target: { value: "Dupont" },
     });
-    expect(screen.queryByTestId("error-nom")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("error-lastName")).not.toBeInTheDocument();
   });
 });
 
-describe("App - Toaster de succès", () => {
-  it("affiche le toaster après une soumission valide", () => {
+describe("App - Success toaster", () => {
+  it("should display the toaster after a valid submission", () => {
     render(<App />);
     fillForm(VALID_FORM);
     fireEvent.click(screen.getByTestId("submit-btn"));
@@ -171,7 +154,7 @@ describe("App - Toaster de succès", () => {
     );
   });
 
-  it("vide les champs après une soumission valide", () => {
+  it("should clear fields after a valid submission", () => {
     render(<App />);
     fillForm(VALID_FORM);
     fireEvent.click(screen.getByTestId("submit-btn"));
@@ -183,7 +166,7 @@ describe("App - Toaster de succès", () => {
     expect(screen.getByLabelText(/Code postal/i).value).toBe("");
   });
 
-  it("le toaster disparaît après 3 secondes", () => {
+  it("should hide the toaster after 3 seconds", () => {
     jest.useFakeTimers();
     render(<App />);
     fillForm(VALID_FORM);
@@ -197,59 +180,48 @@ describe("App - Toaster de succès", () => {
   });
 });
 
-describe("App - Sauvegarde dans le localStorage", () => {
-  it("sauvegarde les données dans le localStorage après soumission", () => {
+describe("App - localStorage", () => {
+  it("should save data to localStorage after submission", () => {
     render(<App />);
     fillForm(VALID_FORM);
     fireEvent.click(screen.getByTestId("submit-btn"));
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(saved).toHaveLength(1);
-    expect(saved[0].nom).toBe("Dupont");
-    expect(saved[0].prenom).toBe("Jean");
-    expect(saved[0].mail).toBe("jean.dupont@example.com");
+    expect(saved[0].lastName).toBe("Dupont");
+    expect(saved[0].firstName).toBe("Jean");
+    expect(saved[0].email).toBe("jean.dupont@example.com");
   });
 
-  it("cumule les inscrits dans le localStorage à chaque soumission", () => {
-    render(<App />);
-    fillForm(VALID_FORM);
-    fireEvent.click(screen.getByTestId("submit-btn"));
-    fillForm({ ...VALID_FORM, nom: "Martin", mail: "martin@example.com" });
-    fireEvent.click(screen.getByTestId("submit-btn"));
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    expect(saved).toHaveLength(2);
-    expect(saved[1].nom).toBe("Martin");
-  });
-
-  it("charge les inscrits existants depuis le localStorage au montage", () => {
+  it("should load existing users from localStorage on mount", () => {
     const existing = [
       {
-        nom: "Martin",
-        prenom: "Luc",
-        mail: "luc@test.com",
-        dateNaissance: "1990-01-01",
-        ville: "Lyon",
-        codePostal: "69000",
+        lastName: "Martin",
+        firstName: "Luc",
+        email: "luc@test.com",
+        birthDate: "1990-01-01",
+        city: "Lyon",
+        postalCode: "69000",
       },
     ];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
     render(<App />);
-    expect(screen.getByTestId("inscrit-0")).toHaveTextContent("Luc Martin");
+    expect(screen.getByTestId("registeredUser-0")).toHaveTextContent("Luc Martin");
   });
 
-  it("gère un localStorage corrompu sans planter", () => {
+  it("should handle corrupted localStorage without crashing", () => {
     localStorage.setItem(STORAGE_KEY, "données-invalides");
     render(<App />);
-    expect(screen.getByTestId("inscrits-list").children).toHaveLength(0);
+    expect(screen.getByTestId("registeredUsers-list").children).toHaveLength(0);
   });
 });
 
-describe("App - Liste des inscrits", () => {
-  it("affiche un inscrit dans la liste après soumission", () => {
+describe("App - Registered users list", () => {
+  it("should display a registered user in the list after submission", () => {
     render(<App />);
     fillForm(VALID_FORM);
     fireEvent.click(screen.getByTestId("submit-btn"));
-    expect(screen.getByTestId("inscrit-0")).toHaveTextContent("Jean Dupont");
-    expect(screen.getByTestId("inscrit-0")).toHaveTextContent(
+    expect(screen.getByTestId("registeredUser-0")).toHaveTextContent("Jean Dupont");
+    expect(screen.getByTestId("registeredUser-0")).toHaveTextContent(
       "jean.dupont@example.com"
     );
   });

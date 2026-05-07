@@ -67,13 +67,13 @@ export function validateName(name) {
  */
 export function getFieldError(fieldName, value) {
   if (!value) return "Ce champ est requis";
-  if (fieldName === "nom" || fieldName === "prenom" || fieldName === "ville") {
+  if (fieldName === "lastName" || fieldName === "firstName" || fieldName === "city") {
     return validateName(value) ? "" : "Champ invalide (pas de chiffres ni caractères spéciaux)";
   }
-  if (fieldName === "mail") {
+  if (fieldName === "email") {
     return validateEmail(value) ? "" : "Email invalide";
   }
-  if (fieldName === "dateNaissance") {
+  if (fieldName === "birthDate") {
     return isAdult({ birth: new Date(value) }) ? "" : "Vous devez avoir au moins 18 ans";
   }
   return validateCodePostal(value) ? "" : "Code postal invalide (5 chiffres)";

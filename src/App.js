@@ -2,20 +2,20 @@ import React, { useState } from "react";
 import "./App.css";
 import { getFieldError } from "./utils/module";
 
-const STORAGE_KEY = "inscrits";
+const STORAGE_KEY = "registeredUsers";
 
 const EMPTY_FORM = {
-  nom: "",
-  prenom: "",
-  mail: "",
-  dateNaissance: "",
-  ville: "",
-  codePostal: "",
+  lastName: "",
+  firstName: "",
+  email: "",
+  birthDate: "",
+  city: "",
+  postalCode: "",
 };
 
 const FIELDS = Object.keys(EMPTY_FORM);
 
-function loadInscrits() {
+function loadRegisteredUsers() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
   } catch {
@@ -27,7 +27,7 @@ function App() {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [toaster, setToaster] = useState(false);
-  const [inscrits, setInscrits] = useState(loadInscrits);
+  const [registeredUsers, setRegisteredUsers] = useState(loadRegisteredUsers);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,9 +41,9 @@ function App() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const newList = [...inscrits, formData];
+    const newList = [...registeredUsers, formData];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newList));
-    setInscrits(newList);
+    setRegisteredUsers(newList);
     setFormData(EMPTY_FORM);
     setErrors({});
     setToaster(true);
@@ -57,7 +57,7 @@ function App() {
           role="alert"
           data-testid="toaster"
           style={{
-            background: "#4caf50",
+            background: "green",
             color: "white",
             padding: "12px 20px",
             marginBottom: "16px",
@@ -72,97 +72,97 @@ function App() {
 
       <form onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="nom">Nom :</label>
+          <label htmlFor="lastName">Nom :</label>
           <input
-            id="nom"
+            id="lastName"
             type="text"
-            name="nom"
-            value={formData.nom}
+            name="lastName"
+            value={formData.lastName}
             onChange={handleChange}
           />
-          {errors.nom && (
-            <span data-testid="error-nom" style={{ color: "red" }}>
-              {errors.nom}
+          {errors.lastName && (
+            <span data-testid="error-lastName" style={{ color: "red" }}>
+              {errors.lastName}
             </span>
           )}
         </div>
 
         <div>
-          <label htmlFor="prenom">Prénom :</label>
+          <label htmlFor="firstName">Prénom :</label>
           <input
-            id="prenom"
+            id="firstName"
             type="text"
-            name="prenom"
-            value={formData.prenom}
+            name="firstName"
+            value={formData.firstName}
             onChange={handleChange}
           />
-          {errors.prenom && (
-            <span data-testid="error-prenom" style={{ color: "red" }}>
-              {errors.prenom}
+          {errors.firstName && (
+            <span data-testid="error-firstName" style={{ color: "red" }}>
+              {errors.firstName}
             </span>
           )}
         </div>
 
         <div>
-          <label htmlFor="mail">Mail :</label>
+          <label htmlFor="email">Mail :</label>
           <input
-            id="mail"
+            id="email"
             type="text"
-            name="mail"
-            value={formData.mail}
+            name="email"
+            value={formData.email}
             onChange={handleChange}
           />
-          {errors.mail && (
-            <span data-testid="error-mail" style={{ color: "red" }}>
-              {errors.mail}
+          {errors.email && (
+            <span data-testid="error-email" style={{ color: "red" }}>
+              {errors.email}
             </span>
           )}
         </div>
 
         <div>
-          <label htmlFor="dateNaissance">Date de naissance :</label>
+          <label htmlFor="birthDate">Date de naissance :</label>
           <input
-            id="dateNaissance"
+            id="birthDate"
             type="date"
-            name="dateNaissance"
-            value={formData.dateNaissance}
+            name="birthDate"
+            value={formData.birthDate}
             onChange={handleChange}
           />
-          {errors.dateNaissance && (
-            <span data-testid="error-dateNaissance" style={{ color: "red" }}>
-              {errors.dateNaissance}
+          {errors.birthDate && (
+            <span data-testid="error-birthDate" style={{ color: "red" }}>
+              {errors.birthDate}
             </span>
           )}
         </div>
 
         <div>
-          <label htmlFor="ville">Ville :</label>
+          <label htmlFor="city">Ville :</label>
           <input
-            id="ville"
+            id="city"
             type="text"
-            name="ville"
-            value={formData.ville}
+            name="city"
+            value={formData.city}
             onChange={handleChange}
           />
-          {errors.ville && (
-            <span data-testid="error-ville" style={{ color: "red" }}>
-              {errors.ville}
+          {errors.city && (
+            <span data-testid="error-city" style={{ color: "red" }}>
+              {errors.city}
             </span>
           )}
         </div>
 
         <div>
-          <label htmlFor="codePostal">Code postal :</label>
+          <label htmlFor="postalCode">Code postal :</label>
           <input
-            id="codePostal"
+            id="postalCode"
             type="text"
-            name="codePostal"
-            value={formData.codePostal}
+            name="postalCode"
+            value={formData.postalCode}
             onChange={handleChange}
           />
-          {errors.codePostal && (
-            <span data-testid="error-codePostal" style={{ color: "red" }}>
-              {errors.codePostal}
+          {errors.postalCode && (
+            <span data-testid="error-postalCode" style={{ color: "red" }}>
+              {errors.postalCode}
             </span>
           )}
         </div>
@@ -178,10 +178,10 @@ function App() {
       </form>
 
       <h2>Liste des inscrits</h2>
-      <ul data-testid="inscrits-list">
-        {inscrits.map((u, i) => (
-          <li key={i} data-testid={`inscrit-${i}`}>
-            {u.prenom} {u.nom} — {u.mail}
+      <ul data-testid="registeredUsers-list">
+        {registeredUsers.map((u, i) => (
+          <li key={i} data-testid={`registeredUser-${i}`}>
+            {u.firstName} {u.lastName} — {u.email}
           </li>
         ))}
       </ul>

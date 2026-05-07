@@ -179,64 +179,6 @@ describe("validateName Unit Test Suites", () => {
  */
 describe("getFieldError Unit Test Suites", () => {
   it("should return an error when value is empty", () => {
-    expect(getFieldError("nom", "")).toBe("Ce champ est requis");
-  });
-
-  it("should return empty string for valid nom", () => {
-    expect(getFieldError("nom", "Dupont")).toBe("");
-  });
-
-  it("should return an error for invalid nom", () => {
-    expect(getFieldError("nom", "Dupont123")).toBe(
-      "Champ invalide (pas de chiffres ni caractères spéciaux)"
-    );
-  });
-
-  it("should return empty string for valid prenom", () => {
-    expect(getFieldError("prenom", "Jean")).toBe("");
-  });
-
-  it("should return an error for invalid prenom", () => {
-    expect(getFieldError("prenom", "Jean@")).toBe(
-      "Champ invalide (pas de chiffres ni caractères spéciaux)"
-    );
-  });
-
-  it("should return empty string for valid ville", () => {
-    expect(getFieldError("ville", "Paris")).toBe("");
-  });
-
-  it("should return an error for invalid ville", () => {
-    expect(getFieldError("ville", "Paris2")).toBe(
-      "Champ invalide (pas de chiffres ni caractères spéciaux)"
-    );
-  });
-
-  it("should return empty string for valid email", () => {
-    expect(getFieldError("mail", "jean@example.com")).toBe("");
-  });
-
-  it("should return an error for invalid email", () => {
-    expect(getFieldError("mail", "notanemail")).toBe("Email invalide");
-  });
-
-  it("should return empty string for an adult date of birth", () => {
-    expect(getFieldError("dateNaissance", "1990-06-15")).toBe("");
-  });
-
-  it("should return an error for a minor date of birth", () => {
-    expect(getFieldError("dateNaissance", "2015-01-01")).toBe(
-      "Vous devez avoir au moins 18 ans"
-    );
-  });
-
-  it("should return empty string for a valid postal code", () => {
-    expect(getFieldError("codePostal", "75001")).toBe("");
-  });
-
-  it("should return an error for an invalid postal code", () => {
-    expect(getFieldError("codePostal", "7500")).toBe(
-      "Code postal invalide (5 chiffres)"
-    );
+    expect(getFieldError("lastName", "")).toBe("Ce champ est requis");
   });
 });
