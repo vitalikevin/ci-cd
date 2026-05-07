@@ -16,7 +16,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test --coverage --verbose",
+    "test": "react-scripts test --coverage --verbose --watchAll=false",
     "eject": "react-scripts eject",
     "jsdoc": "jsdoc module.js",
     "predeploy" : "npm run build",
