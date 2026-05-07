@@ -40,6 +40,9 @@
       "last 1 safari version"
     ]
   },
+  "overrides": {
+    "yaml": "^2.8.4"
+  },
   "devDependencies": {
     "@babel/preset-env": "^7.29.3",
     "babel-jest": "^30.3.0",
