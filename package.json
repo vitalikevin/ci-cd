@@ -16,7 +16,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test --coverage --verbose --watchAll=false",
+    "test": "react-scripts test --coverage --verbose --collectCoverageFrom=src/*.js --collectCoverageFrom=!src/reportWebVitals.js --collectCoverageFrom=!src/index.js --watchAll=false",
     "eject": "react-scripts eject",
     "jsdoc": "jsdoc module.js",
     "predeploy" : "npm run build",
