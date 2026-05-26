@@ -75,11 +75,15 @@ jobs:
           git config --global user.email "kevin.vitali140@gmail.com"
           git config --global user.name "Kévin Vitali"
           npm run build-npm-ci
+          REMOTE_VERSION=$(npm view my-app-kvitali version)
           npm version patch --no-git-tag-version
-          npm publish
-          git add package.json package-lock.json
-          git commit -m "updated version"
-          git push
+          LOCAL_VERSION=$(node -p "require('./package.json').version")
+          if [ "$LOCAL_VERSION" != "$REMOTE_VERSION" ]; then
+            npm publish
+            git add package.json package-lock.json
+            git commit -m "updated version"
+            git push
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
