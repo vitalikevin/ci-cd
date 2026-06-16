@@ -1,0 +1,85 @@
+name: Docker build, push and health tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build frontend image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/frontend -f DockerfileReact .
+
+      - name: Push frontend image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend
+
+      - name: Build backend image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/backend -f DockerfileServer .
+
+      - name: Push backend image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/backend
+
+  test-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
+          echo "MYSQL_DATABASE=ynov_ci" >> .env
+          echo "MYSQL_USER=root" >> .env
+          echo "MYSQL_HOST=db" >> .env
+
+      - name: Start the stack
+        run: docker compose up -d --build
+
+      - name: List running containers
+        run: docker ps
+
+      - name: Wait for all services to become healthy
+        run: |
+          SERVICES="db adminer server react"
+          TIMEOUT=180
+          for service in $SERVICES; do
+            echo "Waiting for $service to become healthy..."
+            ELAPSED=0
+            until [ "$(docker inspect --format '{{json .State.Health.Status}}' "$service")" = '"healthy"' ]; do
+              if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+                echo "$service did not become healthy in time"
+                docker logs "$service"
+                exit 1
+              fi
+              sleep 5
+              ELAPSED=$((ELAPSED + 5))
+            done
+            echo "$service is healthy"
+          done
+
+      - name: Verify health status with jq
+        run: |
+          for service in db adminer server react; do
+            echo "Checking $service..."
+            docker inspect --format "{{json .State.Health.Status }}" "$service" | jq -e '. == "healthy"'
+          done
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down -v

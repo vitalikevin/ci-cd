@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import "./App.css";
 import { getFieldError } from "./utils/module";
 
@@ -24,10 +25,27 @@ function loadRegisteredUsers() {
 }
 
 function App() {
+  const port = process.env.REACT_APP_SERVER_PORT;
+  const [usersCount, setUsersCount] = useState(0);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [toaster, setToaster] = useState(false);
   const [registeredUsers, setRegisteredUsers] = useState(loadRegisteredUsers);
+
+  useEffect(() => {
+    async function countUsers() {
+      try {
+        const api = axios.create({
+          baseURL: `http://localhost:${port}`,
+        });
+        const response = await api.get(`/users`);
+        setUsersCount(response.data.utilisateurs.length);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    countUsers();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -69,6 +87,7 @@ function App() {
       )}
 
       <h2>Inscription</h2>
+      <p data-testid="users-count">{usersCount} user(s) already registered</p>
 
       <form onSubmit={handleSubmit}>
         <div>
