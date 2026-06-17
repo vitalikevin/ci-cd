@@ -53,9 +53,22 @@ jobs:
         with:
           path: build
 
+  # E2E tests with Cypress
+  e2e:
+    needs: build_test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          build: npm run build
+          start: npm start
+
   # Publish to NPM job
   publish_npm:
-    needs: build_test
+    needs: e2e
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -91,7 +104,7 @@ jobs:
 
   # Deploy job
   deploy:
-    needs: build_test
+    needs: e2e
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
