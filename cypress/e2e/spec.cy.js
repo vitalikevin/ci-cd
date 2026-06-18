@@ -30,7 +30,9 @@ function fillForm(user) {
   cy.get('#lastName').type(user.lastName)
   cy.get('#firstName').type(user.firstName)
   cy.get('#email').type(user.email)
-  cy.get('#birthDate').type(user.birthDate)
+  // invoke('val') est utilisé pour contourner la validation de Cypress sur les dates
+  // (cy.type() rejette les dates hors plage, ex: 0001-01-01)
+  cy.get('#birthDate').invoke('val', user.birthDate).trigger('change')
   cy.get('#city').type(user.city)
   cy.get('#postalCode').type(user.postalCode)
 }
