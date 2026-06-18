@@ -181,4 +181,16 @@ describe("getFieldError Unit Test Suites", () => {
   it("should return an error when value is empty", () => {
     expect(getFieldError("lastName", "")).toBe("Ce champ est requis");
   });
+
+  it("should return an error for a date before 1900", () => {
+    expect(getFieldError("birthDate", "0001-01-01")).toBe("Date de naissance invalide");
+  });
+
+  it("should return an error for a minor", () => {
+    expect(getFieldError("birthDate", "2015-01-01")).toBe("Vous devez avoir au moins 18 ans");
+  });
+
+  it("should return no error for a valid adult birthdate", () => {
+    expect(getFieldError("birthDate", "1990-06-15")).toBe("");
+  });
 });

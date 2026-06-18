@@ -74,7 +74,11 @@ export function getFieldError(fieldName, value) {
     return validateEmail(value) ? "" : "Email invalide";
   }
   if (fieldName === "birthDate") {
-    return isAdult({ birth: new Date(value) }) ? "" : "Vous devez avoir au moins 18 ans";
+    const date = new Date(value);
+    if (isNaN(date.getTime()) || date.getFullYear() < 1900) {
+      return "Date de naissance invalide";
+    }
+    return isAdult({ birth: date }) ? "" : "Vous devez avoir au moins 18 ans";
   }
   return validateCodePostal(value) ? "" : "Code postal invalide (5 chiffres)";
 }
