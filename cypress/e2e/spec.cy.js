@@ -30,11 +30,20 @@ function fillForm(user) {
   cy.get('#lastName').type(user.lastName)
   cy.get('#firstName').type(user.firstName)
   cy.get('#email').type(user.email)
-  // invoke('val') est utilisé pour contourner la validation de Cypress sur les dates
-  // (cy.type() rejette les dates hors plage, ex: 0001-01-01)
-  cy.get('#birthDate').invoke('val', user.birthDate).trigger('change')
+  cy.get('#birthDate').type(user.birthDate)
   cy.get('#city').type(user.city)
   cy.get('#postalCode').type(user.postalCode)
+}
+
+function setDateNative(value) {
+  cy.get('#birthDate').then(($input) => {
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype,
+      'value'
+    ).set;
+    nativeInputValueSetter.call($input[0], value);
+    $input[0].dispatchEvent(new Event('input', { bubbles: true }));
+  })
 }
 
 // Helper : se connecte en admin
@@ -123,7 +132,12 @@ describe('Formulaire - validation', () => {
   })
 
   it('le bouton est désactivé si la date est avant 1900', () => {
-    fillForm({ ...validUser, birthDate: '0001-01-01' })
+    cy.get('#lastName').type(validUser.lastName)
+    cy.get('#firstName').type(validUser.firstName)
+    cy.get('#email').type(validUser.email)
+    cy.get('#city').type(validUser.city)
+    cy.get('#postalCode').type(validUser.postalCode)
+    setDateNative('0001-01-01')
     cy.get('[data-testid="submit-btn"]').should('be.disabled')
     cy.get('[data-testid="error-birthDate"]').should('exist')
   })
@@ -231,9 +245,11 @@ describe('Espace admin', () => {
 
   it('admin peut supprimer un utilisateur → il disparaît de la liste', () => {
     cy.intercept('DELETE', /\/users\/\d+/, { body: { message: 'Utilisateur supprimé' } }).as('deleteUser')
-    cy.intercept('GET', /\/users$/, { body: { utilisateurs: [] } }).as('getUsersAfterDelete')
 
     loginAsAdmin()
+
+    cy.intercept('GET', /\/users$/, { body: { utilisateurs: [] } }).as('getUsersAfterDelete')
+
     cy.get('[data-testid="btn-delete-0"]').click()
     cy.wait('@deleteUser')
 
