@@ -21,28 +21,35 @@ const FIELDS = Object.keys(EMPTY_FORM);
 /**
  * Main application component.
  *
- * Renders a registration form that validates user input (last name, first name,
- * email, birth date, city, postal code) before saving to the database via the API.
- * Displays a success toaster on valid submission and the list of registered users.
- * Includes an admin login to manage users (view private info, delete).
+ * Renders a two-tab interface:
+ * - "Inscription" tab: registration form and public user list.
+ * - "Connexion" tab: admin login form, then admin panel (user list with
+ *   detail and delete actions) once authenticated.
  *
  * @component
- * @returns {React.JSX.Element} The full registration page with form and user list.
+ * @returns {React.JSX.Element} The full application with tabbed navigation.
  */
 function App() {
+  const [activeTab, setActiveTab] = useState("inscription");
   const [users, setUsers] = useState([]);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [toaster, setToaster] = useState(null);
 
-  // Admin state
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loginError, setLoginError] = useState("");
 
-  // Selected user details (admin only)
   const [selectedUser, setSelectedUser] = useState(null);
+
+  const handleLogout = () => {
+    setIsAdmin(false);
+    setAdminEmail("");
+    setAdminPassword("");
+    setSelectedUser(null);
+    setActiveTab("inscription");
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -95,11 +102,11 @@ function App() {
           setIsAdmin(true);
           setLoginError("");
         } else {
-          setLoginError("Identifiants incorrects ou compte non admin.");
+          setLoginError("Identifiants incorrects.");
         }
       })
       .catch(() => {
-        setLoginError("Identifiants incorrects ou compte non admin.");
+        setLoginError("Identifiants incorrects.");
       });
   };
 
@@ -142,108 +149,156 @@ function App() {
         </div>
       )}
 
-      {/* Formulaire d'inscription */}
-      <h2>Inscription</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="lastName">Nom :</label>
-          <input id="lastName" type="text" name="lastName" value={formData.lastName} onChange={handleChange} />
-          {errors.lastName && <span data-testid="error-lastName" style={{ color: "red" }}>{errors.lastName}</span>}
-        </div>
-        <div>
-          <label htmlFor="firstName">Prénom :</label>
-          <input id="firstName" type="text" name="firstName" value={formData.firstName} onChange={handleChange} />
-          {errors.firstName && <span data-testid="error-firstName" style={{ color: "red" }}>{errors.firstName}</span>}
-        </div>
-        <div>
-          <label htmlFor="email">Mail :</label>
-          <input id="email" type="text" name="email" value={formData.email} onChange={handleChange} />
-          {errors.email && <span data-testid="error-email" style={{ color: "red" }}>{errors.email}</span>}
-        </div>
-        <div>
-          <label htmlFor="birthDate">Date de naissance :</label>
-          <input id="birthDate" type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} />
-          {errors.birthDate && <span data-testid="error-birthDate" style={{ color: "red" }}>{errors.birthDate}</span>}
-        </div>
-        <div>
-          <label htmlFor="city">Ville :</label>
-          <input id="city" type="text" name="city" value={formData.city} onChange={handleChange} />
-          {errors.city && <span data-testid="error-city" style={{ color: "red" }}>{errors.city}</span>}
-        </div>
-        <div>
-          <label htmlFor="postalCode">Code postal :</label>
-          <input id="postalCode" type="text" name="postalCode" value={formData.postalCode} onChange={handleChange} />
-          {errors.postalCode && <span data-testid="error-postalCode" style={{ color: "red" }}>{errors.postalCode}</span>}
-        </div>
-        <br />
-        <button type="submit" data-testid="submit-btn" disabled={!isFormValid}>
-          Sauvegarder
-        </button>
-      </form>
+      {/* Navigation */}
+      <nav style={{ marginBottom: "16px" }}>
+        {isAdmin ? (
+          <button data-testid="logout-btn" onClick={handleLogout}>
+            Déconnexion
+          </button>
+        ) : (
+          <>
+            <button
+              data-testid="tab-inscription"
+              onClick={() => setActiveTab("inscription")}
+              style={{ fontWeight: activeTab === "inscription" ? "bold" : "normal", marginRight: "8px" }}
+            >
+              Inscription
+            </button>
+            <button
+              data-testid="tab-connexion"
+              onClick={() => setActiveTab("connexion")}
+              style={{ fontWeight: activeTab === "connexion" ? "bold" : "normal" }}
+            >
+              Connexion
+            </button>
+          </>
+        )}
+      </nav>
 
-      {/* Liste des inscrits */}
-      <h2>Liste des inscrits</h2>
-      <ul data-testid="registeredUsers-list">
-        {users.map((u, i) => (
-          <li key={u.id} data-testid={`registeredUser-${i}`}>
-            {u.firstName} {u.lastName} — {u.email}
-            {isAdmin && (
-              <>
-                <button data-testid={`btn-details-${i}`} onClick={() => handleViewDetails(u.id)} style={{ marginLeft: "10px" }}>
+      {/* ── Admin connecté ───────────────────────────────────── */}
+      {isAdmin && (
+        <div>
+          <p data-testid="admin-logged">Connecté en tant qu'administrateur.</p>
+
+          <h2>Gestion des utilisateurs</h2>
+          <ul data-testid="registeredUsers-list">
+            {users.map((u, i) => (
+              <li key={u.id} data-testid={`registeredUser-${i}`}>
+                {u.firstName} {u.lastName} — {u.email}
+                <button
+                  data-testid={`btn-details-${i}`}
+                  onClick={() => handleViewDetails(u.id)}
+                  style={{ marginLeft: "10px" }}
+                >
                   Détails
                 </button>
-                <button data-testid={`btn-delete-${i}`} onClick={() => handleDelete(u.id)} style={{ marginLeft: "5px", color: "red" }}>
+                <button
+                  data-testid={`btn-delete-${i}`}
+                  onClick={() => handleDelete(u.id)}
+                  style={{ marginLeft: "5px", color: "red" }}
+                >
                   Supprimer
                 </button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
+              </li>
+            ))}
+          </ul>
 
-      {/* Détails d'un utilisateur (admin) */}
-      {selectedUser && (
-        <div data-testid="user-details">
-          <h3>Détails de l'utilisateur</h3>
-          <p>Nom : {selectedUser.lastName}</p>
-          <p>Prénom : {selectedUser.firstName}</p>
-          <p>Email : {selectedUser.email}</p>
-          <p>Date de naissance : {selectedUser.birthDate}</p>
-          <p>Ville : {selectedUser.city}</p>
-          <p>Code postal : {selectedUser.postalCode}</p>
-          <button onClick={() => setSelectedUser(null)}>Fermer</button>
+          {selectedUser && (
+            <div data-testid="user-details">
+              <h3>Détails de l'utilisateur</h3>
+              <p>Nom : {selectedUser.lastName}</p>
+              <p>Prénom : {selectedUser.firstName}</p>
+              <p>Email : {selectedUser.email}</p>
+              <p>Date de naissance : {selectedUser.birthDate}</p>
+              <p>Ville : {selectedUser.city}</p>
+              <p>Code postal : {selectedUser.postalCode}</p>
+              <button onClick={() => setSelectedUser(null)}>Fermer</button>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Connexion admin */}
-      <h2>Espace admin</h2>
-      {isAdmin ? (
-        <p data-testid="admin-logged">Connecté en tant qu'administrateur.</p>
-      ) : (
-        <form onSubmit={handleLogin}>
-          <div>
-            <label htmlFor="adminEmail">Email admin :</label>
-            <input
-              id="adminEmail"
-              type="text"
-              data-testid="admin-email-input"
-              value={adminEmail}
-              onChange={(e) => setAdminEmail(e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="adminPassword">Mot de passe :</label>
-            <input
-              id="adminPassword"
-              type="password"
-              data-testid="admin-password-input"
-              value={adminPassword}
-              onChange={(e) => setAdminPassword(e.target.value)}
-            />
-          </div>
-          {loginError && <p data-testid="login-error" style={{ color: "red" }}>{loginError}</p>}
-          <button type="submit" data-testid="login-btn">Se connecter</button>
-        </form>
+      {/* ── Onglet Inscription ────────────────────────────────── */}
+      {!isAdmin && activeTab === "inscription" && (
+        <div>
+          <h2>Inscription</h2>
+          <form onSubmit={handleSubmit}>
+            <div>
+              <label htmlFor="lastName">Nom :</label>
+              <input id="lastName" type="text" name="lastName" value={formData.lastName} onChange={handleChange} />
+              {errors.lastName && <span data-testid="error-lastName" style={{ color: "red" }}>{errors.lastName}</span>}
+            </div>
+            <div>
+              <label htmlFor="firstName">Prénom :</label>
+              <input id="firstName" type="text" name="firstName" value={formData.firstName} onChange={handleChange} />
+              {errors.firstName && <span data-testid="error-firstName" style={{ color: "red" }}>{errors.firstName}</span>}
+            </div>
+            <div>
+              <label htmlFor="email">Mail :</label>
+              <input id="email" type="text" name="email" value={formData.email} onChange={handleChange} />
+              {errors.email && <span data-testid="error-email" style={{ color: "red" }}>{errors.email}</span>}
+            </div>
+            <div>
+              <label htmlFor="birthDate">Date de naissance :</label>
+              <input id="birthDate" type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} />
+              {errors.birthDate && <span data-testid="error-birthDate" style={{ color: "red" }}>{errors.birthDate}</span>}
+            </div>
+            <div>
+              <label htmlFor="city">Ville :</label>
+              <input id="city" type="text" name="city" value={formData.city} onChange={handleChange} />
+              {errors.city && <span data-testid="error-city" style={{ color: "red" }}>{errors.city}</span>}
+            </div>
+            <div>
+              <label htmlFor="postalCode">Code postal :</label>
+              <input id="postalCode" type="text" name="postalCode" value={formData.postalCode} onChange={handleChange} />
+              {errors.postalCode && <span data-testid="error-postalCode" style={{ color: "red" }}>{errors.postalCode}</span>}
+            </div>
+            <br />
+            <button type="submit" data-testid="submit-btn" disabled={!isFormValid}>
+              Sauvegarder
+            </button>
+          </form>
+
+          <h2>Liste des inscrits</h2>
+          <ul data-testid="registeredUsers-list">
+            {users.map((u, i) => (
+              <li key={u.id} data-testid={`registeredUser-${i}`}>
+                {u.firstName} {u.lastName} — {u.email}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* ── Onglet Connexion ─────────────────────────────────── */}
+      {!isAdmin && activeTab === "connexion" && (
+        <div>
+          <h2>Espace admin</h2>
+          <form onSubmit={handleLogin}>
+            <div>
+              <label htmlFor="adminEmail">Email :</label>
+              <input
+                id="adminEmail"
+                type="text"
+                data-testid="admin-email-input"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="adminPassword">Mot de passe :</label>
+              <input
+                id="adminPassword"
+                type="password"
+                data-testid="admin-password-input"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+              />
+            </div>
+            {loginError && <p data-testid="login-error" style={{ color: "red" }}>{loginError}</p>}
+            <button type="submit" data-testid="login-btn">Se connecter</button>
+          </form>
+        </div>
       )}
 
     </div>

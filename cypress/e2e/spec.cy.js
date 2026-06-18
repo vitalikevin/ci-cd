@@ -1,6 +1,6 @@
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // Données réutilisables dans les tests
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 const validUser = {
   lastName: 'Test',
@@ -25,7 +25,7 @@ const mockUserDetails = {
   postalCode: '06000',
 }
 
-// Helper : remplit tous les champs du formulaire
+// Helper : remplit tous les champs du formulaire (onglet Inscription)
 function fillForm(user) {
   cy.get('#lastName').type(user.lastName)
   cy.get('#firstName').type(user.firstName)
@@ -35,6 +35,7 @@ function fillForm(user) {
   cy.get('#postalCode').type(user.postalCode)
 }
 
+// Contournement pour les dates hors plage Cypress (ex : 0001-01-01)
 function setDateNative(value) {
   cy.get('#birthDate').then(($input) => {
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
@@ -46,18 +47,19 @@ function setDateNative(value) {
   })
 }
 
-// Helper : se connecte en admin
+// Helper : se connecte en admin depuis l'onglet Connexion
 function loginAsAdmin() {
+  cy.get('[data-testid="tab-connexion"]').click()
   cy.intercept('POST', /\/login/, { body: { success: true, is_admin: true } }).as('login')
-  cy.get('[data-testid="admin-email-input"]').type('test@testmail.com')
-  cy.get('[data-testid="admin-password-input"]').type('abcDEF123!')
+  cy.get('[data-testid="admin-email-input"]').type('loise.fenoll@ynov.com')
+  cy.get('[data-testid="admin-password-input"]').type('PvdrTAzTeR247sDnAZBr')
   cy.get('[data-testid="login-btn"]').click()
   cy.get('[data-testid="admin-logged"]').should('exist')
 }
 
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // Tests Online / Offline (consigne prof)
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 describe('Tests en mode Offline', () => {
 
@@ -92,9 +94,9 @@ describe('Tests en mode Offline', () => {
   })
 })
 
-// ─────────────────────────────────────────────────────────────
-// Validation du formulaire
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Validation du formulaire (onglet Inscription — onglet par défaut)
+// ─────────────────────────────────────────────────────────────────────────────
 
 describe('Formulaire - validation', () => {
 
@@ -148,9 +150,9 @@ describe('Formulaire - validation', () => {
   })
 })
 
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // Inscription
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 describe('Inscription', () => {
 
@@ -203,9 +205,9 @@ describe('Inscription', () => {
   })
 })
 
-// ─────────────────────────────────────────────────────────────
-// Espace admin
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Espace admin (onglet Connexion)
+// ─────────────────────────────────────────────────────────────────────────────
 
 describe('Espace admin', () => {
 
@@ -215,6 +217,7 @@ describe('Espace admin', () => {
   })
 
   it("login avec mauvais identifiants → message d'erreur", () => {
+    cy.get('[data-testid="tab-connexion"]').click()
     cy.intercept('POST', /\/login/, { body: { success: false } }).as('login')
 
     cy.get('[data-testid="admin-email-input"]').type('wrong@email.com')
@@ -260,5 +263,15 @@ describe('Espace admin', () => {
   it('les boutons admin ne sont pas visibles sans connexion', () => {
     cy.get('[data-testid="btn-delete-0"]').should('not.exist')
     cy.get('[data-testid="btn-details-0"]').should('not.exist')
+  })
+
+  it('le bouton Déconnexion ramène aux onglets Inscription/Connexion', () => {
+    loginAsAdmin()
+    cy.get('[data-testid="logout-btn"]').should('exist')
+    cy.get('[data-testid="tab-inscription"]').should('not.exist')
+    cy.get('[data-testid="logout-btn"]').click()
+    cy.get('[data-testid="tab-inscription"]').should('exist')
+    cy.get('[data-testid="tab-connexion"]').should('exist')
+    cy.get('[data-testid="admin-logged"]').should('not.exist')
   })
 })

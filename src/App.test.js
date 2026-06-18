@@ -49,9 +49,7 @@ async function loginAsAdmin() {
 
   render(<App />);
 
-  await waitFor(() => {
-    expect(screen.getByTestId("registeredUser-0")).toBeInTheDocument();
-  });
+  fireEvent.click(screen.getByTestId("tab-connexion"));
 
   fireEvent.change(screen.getByTestId("admin-email-input"), { target: { value: "admin@test.com" } });
   fireEvent.change(screen.getByTestId("admin-password-input"), { target: { value: "password" } });
@@ -60,7 +58,65 @@ async function loginAsAdmin() {
   await waitFor(() => {
     expect(screen.getByTestId("admin-logged")).toBeInTheDocument();
   });
+  await waitFor(() => {
+    expect(screen.getByTestId("btn-delete-0")).toBeInTheDocument();
+  });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("App - Tab navigation", () => {
+  it("should show inscription tab by default with the registration form", () => {
+    render(<App />);
+    expect(screen.getByTestId("tab-inscription")).toBeInTheDocument();
+    expect(screen.getByTestId("tab-connexion")).toBeInTheDocument();
+    expect(screen.getByTestId("submit-btn")).toBeInTheDocument();
+    expect(screen.queryByTestId("admin-email-input")).not.toBeInTheDocument();
+  });
+
+  it("should show the connexion tab content when clicking Connexion", () => {
+    render(<App />);
+    fireEvent.click(screen.getByTestId("tab-connexion"));
+    expect(screen.getByTestId("admin-email-input")).toBeInTheDocument();
+    expect(screen.queryByTestId("submit-btn")).not.toBeInTheDocument();
+  });
+
+  it("should switch back to inscription tab when clicking Inscription", () => {
+    render(<App />);
+    fireEvent.click(screen.getByTestId("tab-connexion"));
+    fireEvent.click(screen.getByTestId("tab-inscription"));
+    expect(screen.getByTestId("submit-btn")).toBeInTheDocument();
+    expect(screen.queryByTestId("admin-email-input")).not.toBeInTheDocument();
+  });
+
+  it("should display users in the inscription tab public list", async () => {
+    mockGet.mockResolvedValueOnce({
+      data: { utilisateurs: [{ id: 1, firstName: "Jean", lastName: "Dupont", email: "jean@test.com" }] },
+    });
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByTestId("registeredUser-0")).toBeInTheDocument();
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("App - Logout", () => {
+  it("should show the logout button and hide tabs when logged in as admin", async () => {
+    await loginAsAdmin();
+    expect(screen.getByTestId("logout-btn")).toBeInTheDocument();
+    expect(screen.queryByTestId("tab-inscription")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("tab-connexion")).not.toBeInTheDocument();
+  });
+
+  it("should return to inscription tab and show tabs after logout", async () => {
+    await loginAsAdmin();
+    fireEvent.click(screen.getByTestId("logout-btn"));
+    expect(screen.getByTestId("tab-inscription")).toBeInTheDocument();
+    expect(screen.getByTestId("tab-connexion")).toBeInTheDocument();
+    expect(screen.queryByTestId("admin-logged")).not.toBeInTheDocument();
+    expect(screen.getByTestId("submit-btn")).toBeInTheDocument();
+  });
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 describe("App - Initial render", () => {
@@ -228,6 +284,7 @@ describe("App - Admin login", () => {
   it("should show admin confirmation when credentials are correct", async () => {
     mockPost.mockResolvedValueOnce({ data: { success: true, is_admin: true } });
     render(<App />);
+    fireEvent.click(screen.getByTestId("tab-connexion"));
     fireEvent.change(screen.getByTestId("admin-email-input"), { target: { value: "admin@test.com" } });
     fireEvent.change(screen.getByTestId("admin-password-input"), { target: { value: "password" } });
     fireEvent.click(screen.getByTestId("login-btn"));
@@ -239,6 +296,7 @@ describe("App - Admin login", () => {
   it("should show an error when the account is not admin", async () => {
     mockPost.mockResolvedValueOnce({ data: { success: true, is_admin: false } });
     render(<App />);
+    fireEvent.click(screen.getByTestId("tab-connexion"));
     fireEvent.change(screen.getByTestId("admin-email-input"), { target: { value: "user@test.com" } });
     fireEvent.change(screen.getByTestId("admin-password-input"), { target: { value: "password" } });
     fireEvent.click(screen.getByTestId("login-btn"));
@@ -250,6 +308,7 @@ describe("App - Admin login", () => {
   it("should show an error when login fails (network error)", async () => {
     mockPost.mockRejectedValueOnce(new Error("Unauthorized"));
     render(<App />);
+    fireEvent.click(screen.getByTestId("tab-connexion"));
     fireEvent.change(screen.getByTestId("admin-email-input"), { target: { value: "wrong@test.com" } });
     fireEvent.change(screen.getByTestId("admin-password-input"), { target: { value: "wrong" } });
     fireEvent.click(screen.getByTestId("login-btn"));

@@ -1,6 +1,7 @@
 import mysql.connector
 import os
 import hashlib
+import time
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -32,18 +33,30 @@ def hash_password(password):
 
 @app.on_event("startup")
 def create_admin():
-    admin_email = os.getenv("ADMIN_EMAIL", "test@testmail.com")
-    admin_password = os.getenv("ADMIN_PASSWORD", "abcDEF123!")
-    conn = get_db()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id FROM users WHERE email = %s", (admin_email,))
-    if not cursor.fetchone():
-        cursor.execute(
-            "INSERT INTO users (lastName, firstName, email, birthDate, city, postalCode, is_admin, password_hash) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-            ("Admin", "Admin", admin_email, "1990-01-01", "Paris", "75000", True, hash_password(admin_password))
-        )
-        conn.commit()
-    conn.close()
+    try:
+        admin_email = os.getenv("ADMIN_EMAIL", "loise.fenoll@ynov.com")
+        admin_password = os.getenv("ADMIN_PASSWORD", "PvdrTAzTeR247sDnAZBr")
+        max_retries = int(os.getenv("DB_MAX_RETRIES", "15"))
+        retry_delay = int(os.getenv("DB_RETRY_DELAY", "2"))
+        for attempt in range(max_retries):
+            try:
+                conn = get_db()
+                break
+            except Exception:
+                if attempt == max_retries - 1:
+                    raise
+                time.sleep(retry_delay)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id FROM users WHERE email = %s", (admin_email,))
+        if not cursor.fetchone():
+            cursor.execute(
+                "INSERT INTO users (lastName, firstName, email, birthDate, city, postalCode, is_admin, password_hash) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                ("Admin", "Admin", admin_email, "1990-01-01", "Paris", "75000", True, hash_password(admin_password))
+            )
+            conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Warning: could not initialise admin account: {e}")
 
 
 class UserForm(BaseModel):
