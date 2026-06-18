@@ -24,6 +24,16 @@ function loadRegisteredUsers() {
   }
 }
 
+/**
+ * Main application component.
+ *
+ * Renders a registration form that validates user input (last name, first name,
+ * email, birth date, city, postal code) before saving to local storage.
+ * Displays a success toaster on valid submission and the list of registered users.
+ *
+ * @component
+ * @returns {React.JSX.Element} The full registration page with form and user list.
+ */
 function App() {
   const port = process.env.REACT_APP_SERVER_PORT;
   const [usersCount, setUsersCount] = useState(0);
