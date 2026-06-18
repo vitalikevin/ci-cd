@@ -2,8 +2,13 @@ USE ynov_ci;
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(100) NOT NULL,
+    lastName VARCHAR(100) NOT NULL,
+    firstName VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
+    birthDate DATE NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    postalCode VARCHAR(10) NOT NULL,
+    is_admin BOOLEAN DEFAULT FALSE,
+    password_hash VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

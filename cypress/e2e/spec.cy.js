@@ -1,58 +1,246 @@
-describe('Home page spec', () => {
-  it('ajout sans erreur : 0 user → inscription valide → 1 user inscrit', () => {
-    cy.clearLocalStorage()
+// ─────────────────────────────────────────────────────────────
+// Données réutilisables dans les tests
+// ─────────────────────────────────────────────────────────────
+
+const validUser = {
+  lastName: 'Test',
+  firstName: 'Jean',
+  email: 'jean.test@testmail.com',
+  birthDate: '1990-06-15',
+  city: 'Nice',
+  postalCode: '06000',
+}
+
+const mockUsers = [
+  { id: 1, firstName: 'Jean', lastName: 'Test', email: 'jean.test@testmail.com' },
+]
+
+const mockUserDetails = {
+  id: 1,
+  firstName: 'Jean',
+  lastName: 'Test',
+  email: 'jean.test@testmail.com',
+  birthDate: '1990-06-15',
+  city: 'Nice',
+  postalCode: '06000',
+}
+
+// Helper : remplit tous les champs du formulaire
+function fillForm(user) {
+  cy.get('#lastName').type(user.lastName)
+  cy.get('#firstName').type(user.firstName)
+  cy.get('#email').type(user.email)
+  cy.get('#birthDate').type(user.birthDate)
+  cy.get('#city').type(user.city)
+  cy.get('#postalCode').type(user.postalCode)
+}
+
+// Helper : se connecte en admin
+function loginAsAdmin() {
+  cy.intercept('POST', /\/login/, { body: { success: true, is_admin: true } }).as('login')
+  cy.get('[data-testid="admin-email-input"]').type('test@testmail.com')
+  cy.get('[data-testid="admin-password-input"]').type('abcDEF123!')
+  cy.get('[data-testid="login-btn"]').click()
+  cy.get('[data-testid="admin-logged"]').should('exist')
+}
+
+// ─────────────────────────────────────────────────────────────
+// Tests Online / Offline (consigne prof)
+// ─────────────────────────────────────────────────────────────
+
+describe('Tests en mode Offline', () => {
+
+  it('devrait afficher la liste des inscrits en ligne', function () {
+    if (Cypress.env('offline')) {
+      this.skip()
+    }
+
+    cy.intercept('GET', /\/users$/, { body: { utilisateurs: mockUsers } }).as('getUsers')
+    cy.visit('/')
+    cy.wait('@getUsers')
+    cy.get('[data-testid="registeredUsers-list"]').children().should('have.length', 1)
+  })
+
+  it("devrait afficher un message d'erreur quand le réseau est coupé", function () {
+    if (!Cypress.env('offline')) {
+      this.skip()
+    }
+
+    cy.log('Mode offline activé !')
+
+    cy.intercept('GET', /\/users$/, { body: { utilisateurs: [] } })
     cy.visit('/')
 
-    // Aucun utilisateur inscrit
-    cy.get('[data-testid="registeredUsers-list"]').children().should('have.length', 0)
+    cy.intercept('POST', /\/users/, { forceNetworkError: true }).as('createUser')
 
-    // Remplir le formulaire sans erreur
-    cy.get('#lastName').type('Test')
-    cy.get('#firstName').type('Jean')
-    cy.get('#email').type('jean.test@testmail.com')
-    cy.get('#birthDate').type('1990-06-15')
-    cy.get('#city').type('Nice')
-    cy.get('#postalCode').type('06000')
+    fillForm(validUser)
+    cy.get('[data-testid="submit-btn"]').click()
+    cy.wait('@createUser')
 
-    cy.get('[data-testid="submit-btn"]').should('not.be.disabled').click()
+    cy.get('[data-testid="toaster"]').should('contain', 'Erreur')
+  })
+})
 
-    // 1 utilisateur inscrit
+// ─────────────────────────────────────────────────────────────
+// Validation du formulaire
+// ─────────────────────────────────────────────────────────────
+
+describe('Formulaire - validation', () => {
+
+  beforeEach(() => {
+    cy.intercept('GET', /\/users$/, { body: { utilisateurs: [] } })
+    cy.visit('/')
+  })
+
+  it('le bouton est désactivé si tous les champs sont vides', () => {
+    cy.get('[data-testid="submit-btn"]').should('be.disabled')
+  })
+
+  it("le bouton est désactivé si l'email est invalide", () => {
+    fillForm({ ...validUser, email: 'emailinvalide' })
+    cy.get('[data-testid="submit-btn"]').should('be.disabled')
+    cy.get('[data-testid="error-email"]').should('exist')
+  })
+
+  it('le bouton est désactivé si le code postal est invalide', () => {
+    fillForm({ ...validUser, postalCode: '123' })
+    cy.get('[data-testid="submit-btn"]').should('be.disabled')
+    cy.get('[data-testid="error-postalCode"]').should('exist')
+  })
+
+  it("le bouton est désactivé si l'utilisateur est mineur", () => {
+    fillForm({ ...validUser, birthDate: '2015-01-01' })
+    cy.get('[data-testid="submit-btn"]').should('be.disabled')
+    cy.get('[data-testid="error-birthDate"]').should('exist')
+  })
+
+  it('le bouton est désactivé si le nom contient des chiffres', () => {
+    fillForm({ ...validUser, lastName: 'Test123' })
+    cy.get('[data-testid="submit-btn"]').should('be.disabled')
+    cy.get('[data-testid="error-lastName"]').should('exist')
+  })
+
+  it('le bouton est désactivé si la date est avant 1900', () => {
+    fillForm({ ...validUser, birthDate: '0001-01-01' })
+    cy.get('[data-testid="submit-btn"]').should('be.disabled')
+    cy.get('[data-testid="error-birthDate"]').should('exist')
+  })
+
+  it('le bouton est actif si tous les champs sont valides', () => {
+    fillForm(validUser)
+    cy.get('[data-testid="submit-btn"]').should('not.be.disabled')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────
+// Inscription
+// ─────────────────────────────────────────────────────────────
+
+describe('Inscription', () => {
+
+  beforeEach(() => {
+    cy.intercept('GET', /\/users$/, { body: { utilisateurs: [] } })
+    cy.visit('/')
+  })
+
+  it('inscription valide → toaster succès + user dans la liste', () => {
+    cy.intercept('POST', /\/users/, {
+      statusCode: 201,
+      body: { message: 'Utilisateur créé' },
+    }).as('createUser')
+
+    cy.intercept('GET', /\/users$/, { body: { utilisateurs: mockUsers } }).as('getUsersAfter')
+
+    fillForm(validUser)
+    cy.get('[data-testid="submit-btn"]').click()
+    cy.wait('@createUser')
+
+    cy.get('[data-testid="toaster"]').should('contain', 'Inscription réussie')
     cy.get('[data-testid="registeredUsers-list"]').children().should('have.length', 1)
     cy.get('[data-testid="registeredUser-0"]').should('contain', 'Jean Test')
   })
 
-  it('ajout avec erreur : 1 user → inscription invalide → toujours 1 user inscrit', () => {
-    // Pré-remplir le localStorage avec 1 user
-    const existingUser = [{
-      lastName: 'Test',
-      firstName: 'Alice',
-      email: 'alice.test@testmail.com',
-      birthDate: '1985-03-20',
-      city: 'Mougins',
-      postalCode: '06250',
-    }]
-    cy.clearLocalStorage()
-    cy.window().then((win) => {
-      win.localStorage.setItem('registeredUsers', JSON.stringify(existingUser))
-    })
+  it('email déjà utilisé → toaster erreur', () => {
+    cy.intercept('POST', /\/users/, {
+      statusCode: 409,
+      body: { detail: 'Email déjà utilisé' },
+    }).as('createUser')
 
+    fillForm(validUser)
+    cy.get('[data-testid="submit-btn"]').click()
+    cy.wait('@createUser')
+
+    cy.get('[data-testid="toaster"]').should('contain', 'déjà utilisé')
+  })
+
+  it('les champs sont vidés après une inscription réussie', () => {
+    cy.intercept('POST', /\/users/, { statusCode: 201, body: {} }).as('createUser')
+    cy.intercept('GET', /\/users$/, { body: { utilisateurs: mockUsers } })
+
+    fillForm(validUser)
+    cy.get('[data-testid="submit-btn"]').click()
+    cy.wait('@createUser')
+
+    cy.get('#lastName').should('have.value', '')
+    cy.get('#firstName').should('have.value', '')
+    cy.get('#email').should('have.value', '')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────
+// Espace admin
+// ─────────────────────────────────────────────────────────────
+
+describe('Espace admin', () => {
+
+  beforeEach(() => {
+    cy.intercept('GET', /\/users$/, { body: { utilisateurs: mockUsers } })
     cy.visit('/')
+  })
 
-    // 1 utilisateur inscrit
-    cy.get('[data-testid="registeredUsers-list"]').children().should('have.length', 1)
+  it("login avec mauvais identifiants → message d'erreur", () => {
+    cy.intercept('POST', /\/login/, { body: { success: false } }).as('login')
 
-    // Remplir avec une erreur (ici : mail invalide)
-    cy.get('#lastName').type('Test')
-    cy.get('#firstName').type('Paul')
-    cy.get('#email').type('mauvaisemail.com')
-    cy.get('#birthDate').type('1995-01-10')
-    cy.get('#city').type('Marseille')
-    cy.get('#postalCode').type('13000')
+    cy.get('[data-testid="admin-email-input"]').type('wrong@email.com')
+    cy.get('[data-testid="admin-password-input"]').type('wrongpassword')
+    cy.get('[data-testid="login-btn"]').click()
 
-    // Bouton désactivé car email invalide
-    cy.get('[data-testid="submit-btn"]').should('be.disabled')
+    cy.get('[data-testid="login-error"]').should('exist')
+    cy.get('[data-testid="admin-logged"]').should('not.exist')
+  })
 
-    // Toujours 1 utilisateur inscrit
-    cy.get('[data-testid="registeredUsers-list"]').children().should('have.length', 1)
+  it('login avec bons identifiants → accès admin accordé', () => {
+    loginAsAdmin()
+    cy.get('[data-testid="btn-delete-0"]').should('exist')
+    cy.get('[data-testid="btn-details-0"]').should('exist')
+  })
+
+  it("admin peut voir les détails d'un utilisateur", () => {
+    cy.intercept('GET', /\/users\/\d+/, { body: mockUserDetails }).as('getUser')
+
+    loginAsAdmin()
+    cy.get('[data-testid="btn-details-0"]').click()
+    cy.wait('@getUser')
+
+    cy.get('[data-testid="user-details"]').should('contain', 'Nice')
+    cy.get('[data-testid="user-details"]').should('contain', '06000')
+    cy.get('[data-testid="user-details"]').should('contain', '1990-06-15')
+  })
+
+  it('admin peut supprimer un utilisateur → il disparaît de la liste', () => {
+    cy.intercept('DELETE', /\/users\/\d+/, { body: { message: 'Utilisateur supprimé' } }).as('deleteUser')
+    cy.intercept('GET', /\/users$/, { body: { utilisateurs: [] } }).as('getUsersAfterDelete')
+
+    loginAsAdmin()
+    cy.get('[data-testid="btn-delete-0"]').click()
+    cy.wait('@deleteUser')
+
+    cy.get('[data-testid="registeredUsers-list"]').children().should('have.length', 0)
+    cy.get('[data-testid="toaster"]').should('contain', 'supprimé')
+  })
+
+  it('les boutons admin ne sont pas visibles sans connexion', () => {
+    cy.get('[data-testid="btn-delete-0"]').should('not.exist')
+    cy.get('[data-testid="btn-details-0"]').should('not.exist')
   })
 })
