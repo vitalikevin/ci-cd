@@ -4,7 +4,7 @@ import "./App.css";
 import { getFieldError } from "./utils/module";
 
 const API = axios.create({
-  baseURL: `http://localhost:${process.env.REACT_APP_SERVER_PORT}`,
+  baseURL: process.env.REACT_APP_API_URL || `http://localhost:${process.env.REACT_APP_SERVER_PORT}`,
 });
 
 const EMPTY_FORM = {
